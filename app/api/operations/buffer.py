@@ -1,8 +1,19 @@
 import json
 import geopandas as gpd
+import random
+import string
 
 EPSG_WGS84 = 'EPSG:4326'
 EPSG_UTM32V = 'EPSG:32632'
+
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+
+def clean_response(json_response):
+    json_response['name'] = id_generator()
+    if('bbox' in json_response): del json_response['bbox']
+    if('bbox' in json_response['features'][0]): del json_response['features'][0]['bbox'] # assumes only one feature in the collection
+    return json_response
 
 
 def buffer(geoframe, value):
@@ -15,11 +26,13 @@ def buffer(geoframe, value):
     # convert back to WGS84
     data_wgs84_buffer = convert_to_WGS84(data_utm32V_buffer)
 
-    return data_wgs84_buffer.to_json()
+    data_wgs84_buffer_json = json.loads(data_wgs84_buffer.to_json())
+
+    return clean_response(data_wgs84_buffer_json)
 
 def convert_request(json_request):
     value = int(json_request['value'])
-    geodataframe = gpd.GeoDataFrame.from_features(json_request['layers']['features'])
+    geodataframe = gpd.GeoDataFrame.from_features(json_request['features'])
     geodataframe.crs = EPSG_WGS84
 
     return geodataframe, value
