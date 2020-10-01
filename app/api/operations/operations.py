@@ -10,7 +10,6 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
     return ''.join(random.choice(chars) for _ in range(size))
 
 def clean_response(json_response):
-    json_response['name'] = id_generator()
     if('bbox' in json_response): del json_response['bbox']
     if('bbox' in json_response['features'][0]): del json_response['features'][0]['bbox'] # assumes only one feature in the collection
     return json_response
@@ -30,8 +29,17 @@ def buffer(geoframe, value):
 
     return clean_response(data_wgs84_buffer_json)
 
+def union(geoframe):
+    union = geoframe.geometry.unary_union
+    if (union.geom_type == 'MultiPolygon'): # if there are multiple inputs, we will split a multipolygon into seperate layers
+        return gpd.GeoDataFrame(geometry=list(union)).to_json()
+    return gpd.GeoDataFrame(geometry=[union]).to_json()
+
+
+
 def convert_request(json_request):
-    value = int(json_request['value'])
+    value = -999 #standard value if no value present
+    if 'value' in json_request: value = int(json_request['value'])
     geodataframe = gpd.GeoDataFrame.from_features(json_request['features'])
     geodataframe.crs = EPSG_WGS84
 
@@ -46,18 +54,18 @@ def convert_to_UTM_32V(geodataframe):
 
 
 ##################################### file specific handling ###############################################
-def load_json_to_gps(fileLocation):
+def load_json_to_gpd(fileLocation):
     data = gpd.read_file(fileLocation)
-    data_utm32N = data.to_crs(32632)
-    return data_utm32N
+    data.crs = EPSG_WGS84
+    #data_utm32N = data.to_crs(32632)
+    return data
 
 def load_json(fileLocation):
     data = json.load(open(fileLocation))
     return data
 
 if __name__ == "__main__":
-    load_json("data/sample_data.json")
-    data = load_json_to_gps("data/sample_data.json")
-    data_100 = data.buffer(100)
-    data_100_wgs84 = data_100.to_crs(4326)
-    data_100_wgs84.to_file("countries.json", driver='GeoJSON')
+    data = load_json_to_gpd("data/sample_union.json")
+    union(data).to_file("union.json", driver='GeoJSON')
+    #data_100_wgs84 = data_100.to_crs(4326)
+    #data_100_wgs84.to_file("countries.json", driver='GeoJSON')
