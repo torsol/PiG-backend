@@ -38,17 +38,11 @@ def union(geoframe):
         return gpd.GeoDataFrame(geometry=list(union)).to_json()
     return gpd.GeoDataFrame(geometry=[union]).to_json()
 
-def difference(geoframe):
-
+def intersection(geoframe):
     partitions = 2
     [array1, array2] = np.array_split(geoframe, partitions)
-    print(array1)
-    print("--")
-    print(array2)
-
     difference = gpd.overlay(array1, array2, how='intersection')
-    #print(difference)
-
+    print(difference)
     return difference.to_json()
 
 
