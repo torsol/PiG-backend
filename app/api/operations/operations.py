@@ -2,6 +2,7 @@ import json
 import geopandas as gpd
 import random
 import string
+import numpy as np
 
 EPSG_WGS84 = 'EPSG:4326'
 EPSG_UTM32V = 'EPSG:32632'
@@ -11,7 +12,9 @@ def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 
 def clean_response(json_response):
     if('bbox' in json_response): del json_response['bbox']
-    if('bbox' in json_response['features'][0]): del json_response['features'][0]['bbox'] # assumes only one feature in the collection
+    if('bbox' in json_response['features'][0]): 
+        for i in range(0, len(json_response['features'])):
+            del json_response['features'][i]['bbox'] # assumes only one feature in the collection
     return json_response
 
 
@@ -34,6 +37,19 @@ def union(geoframe):
     if (union.geom_type == 'MultiPolygon'): # if there are multiple inputs, we will split a multipolygon into seperate layers
         return gpd.GeoDataFrame(geometry=list(union)).to_json()
     return gpd.GeoDataFrame(geometry=[union]).to_json()
+
+def difference(geoframe):
+
+    partitions = 2
+    [array1, array2] = np.array_split(geoframe, partitions)
+    print(array1)
+    print("--")
+    print(array2)
+
+    difference = gpd.overlay(array1, array2, how='intersection')
+    #print(difference)
+
+    return difference.to_json()
 
 
 
