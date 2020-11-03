@@ -50,6 +50,12 @@ def bbox(geoframe):
     geoframe = gpd.GeoDataFrame(geometry=geoseries)
     return geoframe.to_json()
 
+def symmetric_difference(geoframe):
+    partitions = 2
+    [array1, array2] = np.array_split(geoframe, partitions)
+    difference = gpd.overlay(array1, array2, how='symmetric_difference')
+    return difference.to_json()
+
 
 def convert_request(json_request):
     value = -999 #standard value if no value present

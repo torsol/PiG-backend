@@ -2,6 +2,7 @@ from app.api import blueprint
 from flask import request
 
 from app.api.operations.operations import buffer
+from app.api.operations.operations import symmetric_difference
 from app.api.operations.operations import bbox
 from app.api.operations.operations import union
 from app.api.operations.operations import intersection
@@ -30,3 +31,9 @@ def compute_bbox():
     request_json = request.get_json()
     geoframe, _ = convert_request(request_json)
     return bbox(geoframe)
+
+@blueprint.route('/symmetric_difference', methods=['POST'])
+def compute_symmetric_difference():
+    request_json = request.get_json()
+    geoframe, _ = convert_request(request_json)
+    return symmetric_difference(geoframe)
