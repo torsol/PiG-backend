@@ -3,6 +3,7 @@ import geopandas as gpd
 import random
 import string
 import numpy as np
+from shapely.geometry import box
 
 EPSG_WGS84 = 'EPSG:4326'
 EPSG_UTM32V = 'EPSG:32632'
@@ -42,9 +43,12 @@ def intersection(geoframe):
     partitions = 2
     [array1, array2] = np.array_split(geoframe, partitions)
     difference = gpd.overlay(array1, array2, how='intersection')
-    print(difference)
     return difference.to_json()
 
+def bbox(geoframe):
+    geoseries = geoframe.bounds.apply(lambda row: box(row.minx, row.miny, row.maxx, row.maxy), axis=1)
+    geoframe = gpd.GeoDataFrame(geometry=geoseries)
+    return geoframe.to_json()
 
 
 def convert_request(json_request):
@@ -76,6 +80,6 @@ def load_json(fileLocation):
 
 if __name__ == "__main__":
     data = load_json_to_gpd("data/sample_union.json")
-    union(data).to_file("union.json", driver='GeoJSON')
+    bbox(data).to_file("union.json", driver='GeoJSON')
     #data_100_wgs84 = data_100.to_crs(4326)
     #data_100_wgs84.to_file("countries.json", driver='GeoJSON')
