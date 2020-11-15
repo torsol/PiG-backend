@@ -4,6 +4,8 @@ import random
 import string
 import numpy as np
 from shapely.geometry import box
+import itertools
+import pandas as pd
 
 EPSG_WGS84 = 'EPSG:4326'
 EPSG_UTM32V = 'EPSG:32632'
@@ -34,16 +36,35 @@ def buffer(geoframe, value):
     return clean_response(data_wgs84_buffer_json)
 
 def union(geoframe):
+    print(geoframe)
     union = geoframe.geometry.unary_union
     if (union.geom_type == 'MultiPolygon'): # if there are multiple inputs, we will split a multipolygon into seperate layers
         return gpd.GeoDataFrame(geometry=list(union)).to_json()
     return gpd.GeoDataFrame(geometry=[union]).to_json()
 
+def union_experimental(geoframe):
+    differences = []
+    features = np.array_split(geoframe, geoframe.size)
+    for a, b in itertools.combinations(features, 2):
+        print(a, b)
+        difference = gpd.overlay(a, b, how='union')
+        differences.append(difference)
+    geoframe = gpd.GeoDataFrame(geometry=pd.concat(differences).geometry)
+    print (geoframe)
+    return union(geoframe)
+
+def dissolve(geoframe):
+    union = geoframe.geometry.unary_union
+    return gpd.GeoDataFrame(geometry=[union]).to_json()
+
 def intersection(geoframe):
-    partitions = 2
-    [array1, array2] = np.array_split(geoframe, partitions)
-    difference = gpd.overlay(array1, array2, how='intersection')
-    return difference.to_json()
+    differences = []
+    features = np.array_split(geoframe, geoframe.size)
+    for a, b in itertools.combinations(features, 2):
+        difference = gpd.overlay(a, b, how='intersection')
+        differences.append(difference)
+    geoframe = gpd.GeoDataFrame(geometry=pd.concat(differences).geometry)
+    return geoframe.to_json()
 
 def bbox(geoframe):
     geoseries = geoframe.bounds.apply(lambda row: box(row.minx, row.miny, row.maxx, row.maxy), axis=1)
@@ -51,10 +72,13 @@ def bbox(geoframe):
     return geoframe.to_json()
 
 def symmetric_difference(geoframe):
-    partitions = 2
-    [array1, array2] = np.array_split(geoframe, partitions)
-    difference = gpd.overlay(array1, array2, how='symmetric_difference')
-    return difference.to_json()
+    differences = []
+    features = np.array_split(geoframe, geoframe.size)
+    for a, b in itertools.combinations(features, 2):
+        difference = gpd.overlay(a, b, how='symmetric_difference')
+        differences.append(difference)
+    geoframe = gpd.GeoDataFrame(geometry=pd.concat(differences).geometry)
+    return geoframe.to_json()
 
 
 def convert_request(json_request):
