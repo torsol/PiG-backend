@@ -1,13 +1,13 @@
 from app.api import blueprint
 from flask import request
 
-from app.api.operations.operations import buffer
-from app.api.operations.operations import dissolve
-from app.api.operations.operations import symmetric_difference
-from app.api.operations.operations import bbox
-from app.api.operations.operations import union
-from app.api.operations.operations import intersection
-from app.api.operations.operations import convert_request
+from app.api.operations import buffer
+from app.api.operations import dissolve
+from app.api.operations import symmetric_difference
+from app.api.operations import bbox
+from app.api.operations import union
+from app.api.operations import intersection
+from app.api.operations import convert_request
 
 @blueprint.route('/ping', methods=['GET'])
 def ping():

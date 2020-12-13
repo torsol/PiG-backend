@@ -94,22 +94,3 @@ def convert_to_WGS84(geodataframe):
 
 def convert_to_UTM_32V(geodataframe):
     return geodataframe.to_crs(EPSG_UTM32V)
-
-
-
-##################################### file specific handling ###############################################
-def load_json_to_gpd(fileLocation):
-    data = gpd.read_file(fileLocation)
-    data.crs = EPSG_WGS84
-    #data_utm32N = data.to_crs(32632)
-    return data
-
-def load_json(fileLocation):
-    data = json.load(open(fileLocation))
-    return data
-
-if __name__ == "__main__":
-    data = load_json_to_gpd("data/sample_union.json")
-    bbox(data).to_file("union.json", driver='GeoJSON')
-    #data_100_wgs84 = data_100.to_crs(4326)
-    #data_100_wgs84.to_file("countries.json", driver='GeoJSON')
