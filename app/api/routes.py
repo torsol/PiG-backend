@@ -9,6 +9,9 @@ from app.api.operations import union
 from app.api.operations import intersection
 from app.api.operations import convert_request
 
+# In the routes, all paths of the api is defined, along with the correct HTTP-method. GET, POST etc.
+# every path dispatches a function from the operations.py
+
 @blueprint.route('/ping', methods=['GET'])
 def ping():
     return "pong"

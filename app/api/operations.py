@@ -7,13 +7,12 @@ from shapely.geometry import box
 import itertools
 import pandas as pd
 
+# EPSG codes relevant for the projection of the buffer
 EPSG_WGS84 = 'EPSG:4326'
-EPSG_UTM32V = 'EPSG:32632'
-
-def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
-    return ''.join(random.choice(chars) for _ in range(size))
+EPSG_UTM32N = 'EPSG:32632'
 
 def clean_response(json_response):
+    '''clean response takes the json created in the functions and removes the clutter created by geopandas'''
     if('bbox' in json_response): del json_response['bbox']
     if('bbox' in json_response['features'][0]): 
         for i in range(0, len(json_response['features'])):
@@ -22,6 +21,7 @@ def clean_response(json_response):
 
 
 def buffer(geoframe, value):
+    '''buffer creates a buffer around all the geometries in the geoframe, using the value'''
     # convert to UTM32 for reference system in meters
     data_utm32V = convert_to_UTM_32V(geoframe)
 
@@ -36,28 +36,19 @@ def buffer(geoframe, value):
     return clean_response(data_wgs84_buffer_json)
 
 def union(geoframe):
-    print(geoframe)
+    '''union uses geopandas.unary_union to create the unified layer'''
     union = geoframe.geometry.unary_union
     if (union.geom_type == 'MultiPolygon'): # if there are multiple inputs, we will split a multipolygon into seperate layers
         return gpd.GeoDataFrame(geometry=list(union)).to_json()
     return gpd.GeoDataFrame(geometry=[union]).to_json()
 
-def union_experimental(geoframe):
-    differences = []
-    features = np.array_split(geoframe, geoframe.size)
-    for a, b in itertools.combinations(features, 2):
-        print(a, b)
-        difference = gpd.overlay(a, b, how='union')
-        differences.append(difference)
-    geoframe = gpd.GeoDataFrame(geometry=pd.concat(differences).geometry)
-    print (geoframe)
-    return union(geoframe)
-
 def dissolve(geoframe):
+    '''dissolve uses the same unary union, without splitting the resultant multi-polygon'''
     union = geoframe.geometry.unary_union
     return gpd.GeoDataFrame(geometry=[union]).to_json()
 
 def intersection(geoframe):
+    '''intersection takes the pairwise combination of features from the two layers, by the geopandas overlay function'''
     differences = []
     features = np.array_split(geoframe, geoframe.size)
     for a, b in itertools.combinations(features, 2):
@@ -67,11 +58,13 @@ def intersection(geoframe):
     return geoframe.to_json()
 
 def bbox(geoframe):
+    '''Bounding box is created by using the geopandas.bounds method of each feature in the dataframe'''
     geoseries = geoframe.bounds.apply(lambda row: box(row.minx, row.miny, row.maxx, row.maxy), axis=1)
     geoframe = gpd.GeoDataFrame(geometry=geoseries)
     return geoframe.to_json()
 
 def symmetric_difference(geoframe):
+    '''symmetric difference takes the pairwise combination of features from the two layers, by the geopandas overlay function'''
     differences = []
     features = np.array_split(geoframe, geoframe.size)
     for a, b in itertools.combinations(features, 2):
@@ -82,6 +75,7 @@ def symmetric_difference(geoframe):
 
 
 def convert_request(json_request):
+    '''convert request transfers the raw input from the HTTP-request into a readible format for the API'''
     value = -999 #standard value if no value present
     if 'value' in json_request: value = int(json_request['value'])
     geodataframe = gpd.GeoDataFrame.from_features(json_request['features'])
