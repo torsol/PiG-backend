@@ -87,4 +87,4 @@ def convert_to_WGS84(geodataframe):
     return geodataframe.to_crs(EPSG_WGS84)
 
 def convert_to_UTM_32V(geodataframe):
-    return geodataframe.to_crs(EPSG_UTM32V)
+    return geodataframe.to_crs(EPSG_UTM32N)
